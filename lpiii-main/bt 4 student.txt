@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract StudentRegistry {
+    struct Student {
+        string name;
+        uint256 rollno;
+        string className;
+        address owner;
+        bool exists;
+    }
+
+    uint256 private nextId = 0;
+    mapping(uint256 => Student) private students;
+    uint256[] private studentIds; // for iteration
+
+    // --- EVENTS ---
+    event StudentAdded(uint256 id, address owner);
+    event StudentUpdated(uint256 id, address owner);
+    event StudentDeleted(uint256 id, address owner);
+
+    // --- MODIFIERS ---
+    modifier onlyOwner(uint256 _id) {
+        require(students[_id].exists, "Student does not exist");
+        require(students[_id].owner == msg.sender, "Not the owner");
+        _;
+    }
+
+    modifier validId(uint256 _id) {
+        require(students[_id].exists, "Student does not exist");
+        _;
+    }
+
+    // --- FUNCTIONS ---
+
+    function addStudent(
+        string memory _name,
+        uint256 _rollno,
+        string memory _className
+    ) external {
+        uint256 id = nextId++;
+        students[id] = Student({
+            name: _name,
+            rollno: _rollno,
+            className: _className,
+            owner: msg.sender,
+            exists: true
+        });
+        studentIds.push(id);
+        emit StudentAdded(id, msg.sender);
+    }
+
+    function getTotalStudents() external view returns (uint256) {
+        return studentIds.length;
+    }
+
+    function getStudentById(uint256 _id)
+        external
+        view
+        validId(_id)
+        returns (string memory, uint256, string memory, address)
+    {
+        Student memory s = students[_id];
+        return (s.name, s.rollno, s.className, s.owner);
+    }
+
+    function updateStudent(
+        uint256 _id,
+        string memory _newName,
+        string memory _newClassName
+    ) external onlyOwner(_id) {
+        students[_id].name = _newName;
+        students[_id].className = _newClassName;
+        emit StudentUpdated(_id, msg.sender);
+    }
+
+    function deleteStudent(uint256 _id) external onlyOwner(_id) {
+        // Remove from mapping
+        delete students[_id];
+
+        // Remove from array
+        for (uint256 i = 0; i < studentIds.length; i++) {
+            if (studentIds[i] == _id) {
+                studentIds[i] = studentIds[studentIds.length - 1];
+                studentIds.pop();
+                break;
+            }
+        }
+
+        emit StudentDeleted(_id, msg.sender);
+    }
+
+    // Optional: get all student IDs
+    function getAllStudentIds() external view returns (uint256[] memory) {
+        return studentIds;
+    }
+}

@@ -1,0 +1,25 @@
+import heapq
+n = int(input("Enter number of characters: "))
+
+heap = []
+for i in range(n):
+    ch = input(f"Enter character {i+1}: ")
+    f = int(input(f"Enter frequency of '{ch}': "))
+    heapq.heappush(heap, (f, ch))
+
+# Build tree (tuple form)
+while len(heap) > 1:
+    f1, c1 = heapq.heappop(heap)
+    f2, c2 = heapq.heappop(heap)
+    heapq.heappush(heap, (f1 + f2, (c1, c2)))
+
+# Generate codes
+def get_code(tree, prefix=''):
+    if isinstance(tree, str):
+        print(f"{tree} -> {prefix}")
+    else:
+        get_code(tree[0], prefix + '0')
+        get_code(tree[1], prefix + '1')
+
+print("\nHuffman Codes for each character:")
+get_code(heap[0][1])
